@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:comps="components.*"
+	layout="vertical"
+	width="100%" height="100%"
+	creationComplete="init()"
+	pageTitle="Cover Band"
+	currentState="Selection state"
+	backgroundGradientAlphas="[1.0, 1.0]" backgroundGradientColors="[#00AFC4, #00663C]"
+	>
+	
+	<mx:Style>
+		Application { font-family: Arial; font-size: 12; color: #ffffff; }
+		ComboBox { fillAlphas: 0.4, 0.3, 0.0, 0.0;
+			fillColors: #FFFFFF, #000000;
+			alternatingItemColors: #006976, #006976; }
+		FormItem { font-weight: bold; }
+	</mx:Style>
+	 
+	<mx:states>
+		<mx:State name="Selection state">
+			<mx:RemoveChild target="{hbox1}"/>
+			<mx:AddChild position="lastChild">
+				<mx:VBox>
+						<mx:Form>
+							<mx:FormHeading label="Settings" />
+								<mx:FormItem label="Difficulty:">
+									<mx:ComboBox selectedIndex="1" dataProvider="{['Easy', 'Medium', 'Hard', 'Expert']}"/>
+								</mx:FormItem>
+								<mx:FormItem label="Song: ">
+									<mx:ComboBox selectedIndex="0" dataProvider="{['test']}" />
+								</mx:FormItem>
+						</mx:Form>
+				</mx:VBox>
+			</mx:AddChild>
+		</mx:State>
+	</mx:states>
+	
+	<mx:Script>
+		<![CDATA[
+			import components.Note;
+			import mx.events.FlexEvent;
+
+			private function init():void {
+				setFocus();
+				application.addEventListener(KeyboardEvent.KEY_DOWN, handleKeyDown);
+				application.addEventListener(KeyboardEvent.KEY_UP, handleKeyUp);
+				noteChart.addEventListener(MouseEvent.MOUSE_MOVE, handleMouseMove);
+			}
+			
+			private function handleMouseMove(event:MouseEvent):void {
+				textInput.text = event.localX + ", " + event.localY;
+			}
+			
+			private function handleKeyDown(event:KeyboardEvent):void {
+				switch(event.charCode) {
+					case 97:
+						break;
+					case 115:
+						break;
+					case 100:
+						break;
+					case 102:
+						break;
+				}
+			}
+			
+			private function handleKeyUp(event:KeyboardEvent):void {
+				switch(event.charCode) {
+					case 97:
+						break;
+					case 115:
+						break;
+					case 100:
+						break;
+					case 102:
+						break;
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox id="hbox1">
+		<mx:TextInput id="textInput"
+			editable="false" />
+		<comps:NoteChart id="noteChart"
+			width="240" height="640"
+			backgroundColor="#00045F"
+			chartFilename="test"
+			/>
+	</mx:HBox>
+	
+</mx:Application>
