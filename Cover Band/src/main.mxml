@@ -19,6 +19,7 @@
 	 
 	<mx:states>
 		<mx:State name="Selection state">
+			<mx:RemoveChild target="{noteChart}" />
 			<mx:RemoveChild target="{hbox1}"/>
 			<mx:AddChild position="lastChild">
 				<mx:VBox>
@@ -28,7 +29,10 @@
 									<mx:ComboBox selectedIndex="1" dataProvider="{['Easy', 'Medium', 'Hard', 'Expert']}"/>
 								</mx:FormItem>
 								<mx:FormItem label="Song: ">
-									<mx:ComboBox selectedIndex="0" dataProvider="{['test']}" />
+									<mx:ComboBox id="selectSong" selectedIndex="0" dataProvider="{['test']}" />
+								</mx:FormItem>
+								<mx:FormItem>
+									<mx:Button label="Go!" click="currentState=''; noteChart.init();"/>
 								</mx:FormItem>
 						</mx:Form>
 				</mx:VBox>
@@ -44,12 +48,7 @@
 			private function init():void {
 				setFocus();
 				application.addEventListener(KeyboardEvent.KEY_DOWN, handleKeyDown);
-				application.addEventListener(KeyboardEvent.KEY_UP, handleKeyUp);
-				noteChart.addEventListener(MouseEvent.MOUSE_MOVE, handleMouseMove);
-			}
-			
-			private function handleMouseMove(event:MouseEvent):void {
-				textInput.text = event.localX + ", " + event.localY;
+				application.addEventListener(KeyboardEvent.KEY_UP, handleKeyUp);;
 			}
 			
 			private function handleKeyDown(event:KeyboardEvent):void {
@@ -80,12 +79,10 @@
 		]]>
 	</mx:Script>
 	<mx:HBox id="hbox1">
-		<mx:TextInput id="textInput"
-			editable="false" />
 		<comps:NoteChart id="noteChart"
 			width="240" height="640"
-			backgroundColor="#00045F"
-			chartFilename="test"
+			backgroundColor="#00045f"
+			chartFilename="{selectSong.selectedItem}"
 			/>
 	</mx:HBox>
 	
