@@ -9,8 +9,8 @@ package components {
 		private var color:uint;
 		
 		// The default width and height properties don't like to be set to nonzero.
-		private var myWidth:Number;
-		private var myHeight:Number;
+		private var _myWidth:Number;
+		private var _myHeight:Number;
 		
 		public function Note(tick:uint, lane:uint, color:uint, x:Number, y:Number, width:Number, height:Number) {
 			super();
@@ -19,8 +19,8 @@ package components {
 			this.color = color;
 			this.x = x;
 			this.y = y;
-			this.myWidth = width;
-			this.myHeight = height;
+			this._myWidth = width;
+			this._myHeight = height;
 		}
 		
 		public function draw():void {
@@ -29,10 +29,18 @@ package components {
 			if (visible) {
 				//graphics.lineStyle(LINE_WIDTH, 0xffffff, 1);
 				graphics.beginFill(color);
-				//graphics.drawRoundRect(0, 0, myWidth - LINE_WIDTH, myHeight - LINE_WIDTH, myWidth / 3, myWidth / 3);
-				graphics.drawRect(0, 0, myWidth, myHeight);
+				graphics.drawRoundRect(0, 0, myWidth, myHeight, myWidth / 2, myWidth / 2);
+				//graphics.drawRect(0, 0, myWidth, myHeight);
 				graphics.endFill();
 			}
+		}
+		
+		public function get myWidth():Number {
+			return _myWidth;
+		}
+		
+		public function get myHeight():Number {
+			return _myHeight;
 		}
 	}
 }

@@ -8,22 +8,38 @@ package components {
 	import mx.managers.IFocusManagerComponent;
 	
 	public class NoteChart extends UIComponent implements IFocusManagerComponent {
+		public static const RED:uint = 0xff0000;
+		public static const YELLOW:uint = 0xffff00;
+		public static const BLUE:uint = 0x0000ff;
+		public static const GREEN:uint = 0x00ff00;
+		public static const ORANGE:uint = 0xff9900;
+		
+		public static const DRUMS:uint = 0;
+		public static const GUITAR:uint = 1;
+		public static const BASS:uint = 2;
+		public static const LANE_COLORS:Array = [
+			[RED, YELLOW, BLUE, GREEN, ORANGE],
+			[GREEN, RED, YELLOW, BLUE, ORANGE],
+			[GREEN, RED, YELLOW, BLUE, ORANGE]];
+		
 		private const LINE_WIDTH:uint = 2;
 		private const LINE_COLOR:uint = 0xffffff;
-		private const LANE_COLORS:Array = [0xff0000, 0xffff00, 0x0000ff,
-			0x00ff00, 0xff9900];
 		private const HEIGHT_RATIO:Number = 0.5;
-		private const MILLISECONDS_PER_TICK:Number = 1000/30;
-		private const UNITS_PER_TICK:uint = 5;
+		
+		private const MILLISECONDS_PER_TICK:Number = 1000.0/10.0;
+		private const SECONDS_PER_TICK:Number = MILLISECONDS_PER_TICK / 1000.0;
+		private const TICKS_PER_SECOND:Number = 1.0 / SECONDS_PER_TICK;
 		
 		private var _backgroundColor:uint = 0x000000;
 		private var _laneWidth:Number;
 		private var _chartFilename:String;
 		private var _paused:Boolean = true;
 		
+		private var instrument:uint;
 		private var notes:Array;
 		private var numLanes:uint = 0;
 		private var prevTime:int = 0;
+		private var curTick:Number = 0;
 
 		/**
 		 * Not much to do here.  Most of the initialization happens in init
@@ -43,7 +59,9 @@ package components {
 		 * file first being loaded.
 		 * 
 		 */		
-		public function init():void {
+		public function init(instrument:uint):void {
+			this.instrument = instrument;
+			
 			var loader:URLLoader = new URLLoader();
 			configureURLLoaderListeners(loader);
 			
@@ -74,7 +92,9 @@ package components {
 			var numLines:uint = numLanes + 1;
 			for(var lineNum:uint = 0; lineNum < numLines; lineNum++) {
 				var lineShape:Shape = new Shape();
-				var x:uint = lineNum * (_laneWidth + LINE_WIDTH);
+				
+				// Add one pixel to make everything line up properly.
+				var x:uint = lineNum * (_laneWidth + LINE_WIDTH) + 1;
 				lineShape.graphics.lineStyle(LINE_WIDTH, LINE_COLOR, 1, true);
 				lineShape.graphics.moveTo(x, 0);
 				lineShape.graphics.lineTo(x, height);
@@ -89,7 +109,7 @@ package components {
 		}
 		
 		/**
-		 * Start (unpause) the game. 
+		 * Start (unpause) the game.
 		 * 
 		 */		
 		public function play():void {
@@ -97,7 +117,7 @@ package components {
 		}
 		
 		/**
-		 * Pause the game. 
+		 * Pause the game.
 		 * 
 		 */		
 		public function pause():void {
@@ -115,14 +135,15 @@ package components {
 		private function update(event:Event):void {
 			var curTime:int = getTimer();
 			var diffTime:int = curTime - prevTime;
+			var ticks:Number = diffTime / MILLISECONDS_PER_TICK;
+			curTick += ticks;
 			prevTime = curTime;
 			
 			if (!_paused) {
-				var ticks:Number = diffTime / MILLISECONDS_PER_TICK;
-				var units:Number = ticks * UNITS_PER_TICK;
 				for each (var lane:Array in notes) {
 					for each (var note:Note in lane) {
-						note.y += units;
+						// FIXME: Pull this mult out of the loop.
+						note.y += ticks * note.myHeight;
 						note.draw();
 					}
 				}
@@ -230,11 +251,13 @@ package components {
 		}
 		
 		private function addNote(tick:uint, lane:uint):void {
-			var width:Number = _laneWidth;
-			var height:Number = width * HEIGHT_RATIO;
-			var x:Number = lane * (LINE_WIDTH + _laneWidth);
-			var y:Number = tick * height;
-			var note:Note = new Note(tick, lane, LANE_COLORS[lane], x, y, width, height);
+			var noteWidth:Number = _laneWidth;
+			var noteHeight:Number = noteWidth * HEIGHT_RATIO;
+			
+			// +2 so everything lines up properly.
+			var x:Number = lane * (LINE_WIDTH + _laneWidth) + 2;
+			var y:Number = -(tick * noteHeight);
+			var note:Note = new Note(tick, lane, LANE_COLORS[instrument][lane], x, y, noteWidth, noteHeight);
 			(notes[lane] as Array).push(note);
 			addChild(note);
 		}
