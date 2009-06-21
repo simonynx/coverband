@@ -15,6 +15,8 @@
 			fillColors: #FFFFFF, #000000;
 			alternatingItemColors: #006976, #006976; }
 		FormItem { font-weight: bold; }
+		TextInput { color: #000000; }
+		HorizontalList { color: #000000; }
 	</mx:Style>
 	 
 	<mx:states>
@@ -24,17 +26,44 @@
 			<mx:AddChild position="lastChild">
 				<mx:VBox>
 						<mx:Form>
+						
 							<mx:FormHeading label="Settings" />
+							
+								<mx:FormItem label="Instrument:">
+									<mx:ComboBox id="selectInstrument"
+										dataProvider="{['Drums', 'Guitar', 'Bass']}"/>
+								</mx:FormItem>
+								
 								<mx:FormItem label="Difficulty:">
 									<mx:ComboBox selectedIndex="1" dataProvider="{['Easy', 'Medium', 'Hard', 'Expert']}"/>
 								</mx:FormItem>
-								<mx:FormItem label="Song: ">
+								
+								<mx:FormItem label="Song:">
 									<mx:ComboBox id="selectSong" selectedIndex="0" dataProvider="{['test']}" />
 								</mx:FormItem>
+								
+								<!-- TODO: Make this not such a mess. -->
+								<mx:FormItem label="Keys:">
+									<mx:HorizontalList id="colorHList"
+										columnCount="5" columnWidth="40"
+										height="{colorHList.columnWidth}"
+										dataProvider="{['', '', '', '', '']}"
+										alternatingItemColors="{NoteChart.LANE_COLORS[selectInstrument.selectedIndex]}"
+										focusAlpha="0" useRollOver="false"
+										/>
+									<mx:HorizontalList id="keysHList"
+										columnCount="{colorHList.columnCount}"
+										columnWidth="{colorHList.columnWidth}"
+										height="{colorHList.height}"
+										dataProvider="{['a', 's', 'd', 'f', 'g']}"
+										/>
+								</mx:FormItem>
+								
 								<mx:FormItem>
 									<mx:Button label="Go!" id="goButton"
-										click="currentState=''; noteChart.init();"/>
+										click="currentState=''; noteChart.init(selectInstrument.selectedIndex);"/>
 								</mx:FormItem>
+								
 						</mx:Form>
 				</mx:VBox>
 			</mx:AddChild>
@@ -48,7 +77,7 @@
 		
 	<mx:HBox id="playArea">
 		<comps:NoteChart id="noteChart"
-			width="240" height="480"
+			width="262" height="500"
 			backgroundColor="#00045f"
 			chartFilename="{selectSong.selectedItem}"
 			/>
