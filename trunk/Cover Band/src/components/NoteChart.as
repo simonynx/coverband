@@ -5,12 +5,12 @@ package components {
 	import flash.utils.Timer;
 	
 	import mx.core.UIComponent;
-	import mx.messaging.channels.StreamingAMFChannel;
 	
 	public class NoteChart extends UIComponent {
 		private const LINE_WIDTH:uint = 2;
 		private const LINE_COLOR:uint = 0xffffff;
-		private const LANE_COLORS:Array = [0xff0000, 0xffff00, 0x0000ff, 0x00ff00, 0xff9900];
+		private const LANE_COLORS:Array = [0xff0000, 0xffff00, 0x0000ff,
+			0x00ff00, 0xff9900];
 		private const HEIGHT_RATIO:Number = 0.5;
 		
 		private var _backgroundColor:uint = 0x000000;
@@ -21,18 +21,33 @@ package components {
 		
 		private var timer:Timer = new Timer(1000/30);
 		
+		/**
+		 * Not much to do here.  Most of the initialization happens in init
+		 * and finishInit, which deal with URL requests to get the necessary
+		 * data.  init must be called separately.
+		 * 
+		 */		
 		public function NoteChart() {
 			super();
-			// The rest of the functionality is handled by createChildren
-			// and completeURLRequestHandler.
+			// The rest of the functionality is handled by init.
 		}
 		
-		// Add the lane lines and parse the chart file.
-		override protected function createChildren():void {
-			// Load the chart source file from the given filename.
+		/**
+		 * Perform the real initialization here.  NoteChart depends on data
+		 * that isn't present at creation time.  A lot of the work is passed
+		 * off to completeURLRequestHandler since the rest depends on the chart
+		 * file first being loaded.
+		 * 
+		 */		
+		public function init():void {
 			var loader:URLLoader = new URLLoader();
+			
 			configureURLLoaderListeners(loader);
-			var request:URLRequest = new URLRequest("../src/charts/" + _chartFilename + ".chart");
+			
+			var chartPath:String = "../src/charts/" + _chartFilename + ".chart";
+			trace("Attempting to load chart file: " + chartPath);
+			var request:URLRequest = new URLRequest(chartPath);
+				
 			try {
 				loader.load(request);
 			} catch (error:Error) {
@@ -40,15 +55,19 @@ package components {
 			}
 		}
 		
-		// Most of the functionality requires that the chart file be loaded already.
-		private function completeURLRequestHandler(event:Event):void {
-			var loader:URLLoader = URLLoader(event.target);
-			var chartData:Array = (loader.data as String).split("\r\n");
-			
+		/**
+		 * Finish the initialization that couldn't be done without the chart
+		 * file data.
+		 *  
+		 * @param chartData Array of strings representing lines in the chart
+		 * file.
+		 * 
+		 */		
+		public function finishInit(chartData:Array):void {
 			// Parse the file and create the notes.
 			parseChartData(chartData);
 			
-			// Add the lane lines.
+			// Add the graphical lane lines.
 			var numLines:uint = _numLanes + 1;
 			for(var lineNum:uint = 0; lineNum < numLines; lineNum++) {
 				var lineShape:Shape = new Shape();
@@ -62,7 +81,33 @@ package components {
 			
 			timer.addEventListener(TimerEvent.TIMER, timerHandler);
 			timer.start();
+		}
+		
+		/**
+		 * Unravel the chart file data and pass it to finishInit.
+		 * 
+		 * @param event Event containing the chart file data from the URL
+		 * request.
+		 * 
+		 */		
+		private function completeURLRequestHandler(event:Event):void {
+			var loader:URLLoader = URLLoader(event.target);
+			
+			// Remove newlines (\n) and carriage returns (\r).  Do this in two
+			// stages since the file may not contain carriage returns.
+			var chartData:Array = (loader.data as String).split("\n");
+			for (var i:uint = 0; i < chartData.length; i++)
+				chartData[i] = (chartData[i] as String).replace("\r", "");
+			
+			finishInit(chartData);
         }
+        
+		/**
+		 * Placeholder for now.
+		 * 
+		 */		
+		override protected function createChildren():void {
+		}
         
         // Main event loop.  Update and draw all of the notes.
         private function timerHandler(event:TimerEvent):void {
@@ -76,7 +121,8 @@ package components {
 		/**
 		 * Parse the chart file and create notes. 
 		 * 
-		 * @param chartData Lines from the chart file without newline characters.
+		 * @param chartData Lines from the chart file without newline
+		 * characters.
 		 * 
 		 */
 		private function parseChartData(chartData:Array):void {
@@ -84,7 +130,7 @@ package components {
 			var curLine:String;
 			
 			var commentRE:RegExp = /\s*#.*/;
-			var blankLineRE:RegExp = /\s*/;
+			var blankLineRE:RegExp = /^\s*$/;
 			var multiplierRE:RegExp = /x[0-9]*/;
 			
 			for (var lineNum:uint = 0; lineNum < chartData.length; lineNum++) {
@@ -107,9 +153,7 @@ package components {
 				
 				trace(line);
 				
-				// Ignore comment and blank lines.
-				// FIXME
-				if (line.match(commentRE) || line == ""){//line.match(blankLineRE)) {
+				if (line.match(commentRE) || line.match(blankLineRE)) {
 					trace("Comment or blank line detected");
 					continue;
 				}
@@ -118,7 +162,7 @@ package components {
 				var searchIndex:int = line.search(multiplierRE);
 				if (searchIndex != -1) {
 					var substring:String = line.substr(searchIndex);
-					trace("match: " + substring);
+					trace("Found multiplier: " + substring);
 					multiplier = parseInt(substring.substr(1));
 				}
 				
@@ -128,7 +172,6 @@ package components {
 					throw new Error("Invalid chart file");
 				
 				// Extract the note data multiple times.
-				trace("multiplier: " + multiplier);
 				for (var mult:uint = 0; mult < multiplier; mult++) {
 					for (var lane:uint = 0; lane < _numLanes; lane++) {
 						var char:String = line.charAt(lane);
