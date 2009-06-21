@@ -19,8 +19,8 @@
 	 
 	<mx:states>
 		<mx:State name="Selection state">
-			<mx:RemoveChild target="{noteChart}" />
-			<mx:RemoveChild target="{hbox1}"/>
+			<mx:RemoveChild target="{appControlBar}" />
+			<mx:RemoveChild target="{playArea}" />
 			<mx:AddChild position="lastChild">
 				<mx:VBox>
 						<mx:Form>
@@ -32,7 +32,8 @@
 									<mx:ComboBox id="selectSong" selectedIndex="0" dataProvider="{['test']}" />
 								</mx:FormItem>
 								<mx:FormItem>
-									<mx:Button label="Go!" click="currentState=''; noteChart.init();"/>
+									<mx:Button label="Go!" id="goButton"
+										click="currentState=''; noteChart.init();"/>
 								</mx:FormItem>
 						</mx:Form>
 				</mx:VBox>
@@ -40,27 +41,47 @@
 		</mx:State>
 	</mx:states>
 	
+	<mx:ApplicationControlBar id="appControlBar" dock="false">
+		<mx:Button id="playButton" label="Play!" width="80" />
+		<mx:TextArea editable="false" text="{noteChart.fps}" color="#00000" fontWeight="bold"/>
+	</mx:ApplicationControlBar>
+		
+	<mx:HBox id="playArea">
+		<comps:NoteChart id="noteChart"
+			width="240" height="480"
+			backgroundColor="#00045f"
+			chartFilename="{selectSong.selectedItem}"
+			/>
+	</mx:HBox>
 	<mx:Script>
 		<![CDATA[
 			import components.Note;
 			import mx.events.FlexEvent;
 
 			private function init():void {
-				setFocus();
-				application.addEventListener(KeyboardEvent.KEY_DOWN, handleKeyDown);
-				application.addEventListener(KeyboardEvent.KEY_UP, handleKeyUp);;
+				focusManager.setFocus(noteChart);
+				application.addEventListener(KeyboardEvent.KEY_DOWN, noteChartKeyDownHandler);
+				playButton.addEventListener(MouseEvent.CLICK, playButtonClickHandler);
+				application.addEventListener(KeyboardEvent.KEY_UP, handleKeyUp);
 			}
 			
-			private function handleKeyDown(event:KeyboardEvent):void {
-				switch(event.charCode) {
-					case 97:
+			private function noteChartKeyDownHandler(event:KeyboardEvent):void {
+				trace("Triggered key down handler: " + String.fromCharCode(event.charCode).toLowerCase());
+				switch(String.fromCharCode(event.charCode).toLowerCase()) {
+					case "p":
+						playButton.dispatchEvent(new MouseEvent(MouseEvent.CLICK, true, false));
 						break;
-					case 115:
-						break;
-					case 100:
-						break;
-					case 102:
-						break;
+				}
+			}
+			
+			private function playButtonClickHandler(event:MouseEvent):void {
+				trace('Clicked playButton!');
+				if (noteChart.paused) {
+					noteChart.play();
+					playButton.label="Pause";
+				} else {
+					noteChart.pause();
+					playButton.label="Play!";
 				}
 			}
 			
@@ -78,12 +99,5 @@
 			}
 		]]>
 	</mx:Script>
-	<mx:HBox id="hbox1">
-		<comps:NoteChart id="noteChart"
-			width="240" height="640"
-			backgroundColor="#00045f"
-			chartFilename="{selectSong.selectedItem}"
-			/>
-	</mx:HBox>
 	
 </mx:Application>

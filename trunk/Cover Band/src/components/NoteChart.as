@@ -2,25 +2,29 @@ package components {
 	import flash.display.Shape;
 	import flash.events.*;
 	import flash.net.*;
-	import flash.utils.Timer;
+	import flash.utils.getTimer;
 	
 	import mx.core.UIComponent;
+	import mx.managers.IFocusManagerComponent;
 	
-	public class NoteChart extends UIComponent {
+	public class NoteChart extends UIComponent implements IFocusManagerComponent {
 		private const LINE_WIDTH:uint = 2;
 		private const LINE_COLOR:uint = 0xffffff;
 		private const LANE_COLORS:Array = [0xff0000, 0xffff00, 0x0000ff,
 			0x00ff00, 0xff9900];
 		private const HEIGHT_RATIO:Number = 0.5;
+		private const MILLISECONDS_PER_TICK:Number = 1000/30;
+		private const UNITS_PER_TICK:uint = 5;
 		
 		private var _backgroundColor:uint = 0x000000;
-		private var _notes:Array;
-		private var _numLanes:uint = 0;
 		private var _laneWidth:Number;
 		private var _chartFilename:String;
+		private var _paused:Boolean = true;
 		
-		private var timer:Timer = new Timer(1000/30);
-		
+		private var notes:Array;
+		private var numLanes:uint = 0;
+		private var prevTime:int = 0;
+
 		/**
 		 * Not much to do here.  Most of the initialization happens in init
 		 * and finishInit, which deal with URL requests to get the necessary
@@ -41,7 +45,6 @@ package components {
 		 */		
 		public function init():void {
 			var loader:URLLoader = new URLLoader();
-			
 			configureURLLoaderListeners(loader);
 			
 			var chartPath:String = "../src/charts/" + _chartFilename + ".chart";
@@ -68,7 +71,7 @@ package components {
 			parseChartData(chartData);
 			
 			// Add the graphical lane lines.
-			var numLines:uint = _numLanes + 1;
+			var numLines:uint = numLanes + 1;
 			for(var lineNum:uint = 0; lineNum < numLines; lineNum++) {
 				var lineShape:Shape = new Shape();
 				var x:uint = lineNum * (_laneWidth + LINE_WIDTH);
@@ -79,8 +82,54 @@ package components {
 				addChild(lineShape);
 			}
 			
-			timer.addEventListener(TimerEvent.TIMER, timerHandler);
-			timer.start();
+			focusManager.setFocus(this);
+			// Setup the main updating event handler.
+			addEventListener(Event.ENTER_FRAME, update);
+			prevTime = getTimer();
+		}
+		
+		/**
+		 * Start (unpause) the game. 
+		 * 
+		 */		
+		public function play():void {
+			_paused = false;
+		}
+		
+		/**
+		 * Pause the game. 
+		 * 
+		 */		
+		public function pause():void {
+			_paused = true;
+		}
+		
+		
+		private var frames:uint = 0;
+		[Bindable]
+		public var fps:Number = 0;
+		/**
+		 * Main game updating logic.  Called each frame.
+		 * 
+		 */
+		private function update(event:Event):void {
+			var curTime:int = getTimer();
+			var diffTime:int = curTime - prevTime;
+			prevTime = curTime;
+			
+			if (!_paused) {
+				var ticks:Number = diffTime / MILLISECONDS_PER_TICK;
+				var units:Number = ticks * UNITS_PER_TICK;
+				for each (var lane:Array in notes) {
+					for each (var note:Note in lane) {
+						note.y += units;
+						note.draw();
+					}
+				}
+			}
+			
+			frames++;
+			if (frames % 10 == 0) fps = 1.0 / (diffTime / 1000.0);
 		}
 		
 		/**
@@ -100,24 +149,15 @@ package components {
 				chartData[i] = (chartData[i] as String).replace("\r", "");
 			
 			finishInit(chartData);
-        }
-        
+		}
+		
 		/**
 		 * Placeholder for now.
 		 * 
 		 */		
 		override protected function createChildren():void {
 		}
-        
-        // Main event loop.  Update and draw all of the notes.
-        private function timerHandler(event:TimerEvent):void {
-        	for each (var lane:Array in _notes) {
-        		for each (var note:Note in lane) {
-        			note.draw();
-        		}
-        	}
-        }
-        
+
 		/**
 		 * Parse the chart file and create notes. 
 		 * 
@@ -140,13 +180,13 @@ package components {
 				// The number of lanes is a number at the beginning of the file.
 				// Initialize the multi-dimensional Array of lanes X notes.
 				if (lineNum == 0) {
-					_numLanes = parseInt(line);
-					var numLines:uint = _numLanes + 1;
+					numLanes = parseInt(line);
+					var numLines:uint = numLanes + 1;
 					
-					_laneWidth = (width - numLines * LINE_WIDTH) / _numLanes;
-					_notes = new Array(_numLanes);
-					for (var i:uint = 0; i < _numLanes; i++)
-						_notes[i] = new Array();
+					_laneWidth = (width - numLines * LINE_WIDTH) / numLanes;
+					notes = new Array(numLanes);
+					for (var i:uint = 0; i < numLanes; i++)
+						notes[i] = new Array();
 						
 					continue;
 				}
@@ -168,12 +208,12 @@ package components {
 				
 				// From here on out, each line should represent notes.
 				// There must be at least as many notes as there are lanes.
-				if (line.length < _numLanes)
+				if (line.length < numLanes)
 					throw new Error("Invalid chart file");
 				
 				// Extract the note data multiple times.
 				for (var mult:uint = 0; mult < multiplier; mult++) {
-					for (var lane:uint = 0; lane < _numLanes; lane++) {
+					for (var lane:uint = 0; lane < numLanes; lane++) {
 						var char:String = line.charAt(lane);
 						
 						if (char == '-')		// Blank note.
@@ -195,7 +235,7 @@ package components {
 			var x:Number = lane * (LINE_WIDTH + _laneWidth);
 			var y:Number = tick * height;
 			var note:Note = new Note(tick, lane, LANE_COLORS[lane], x, y, width, height);
-			(_notes[lane] as Array).push(note);
+			(notes[lane] as Array).push(note);
 			addChild(note);
 		}
 		
@@ -214,12 +254,8 @@ package components {
 			trace("ioErrorHandler: " + event.text);
 		}
 		
-		private function get notes():Array {
-			return _notes;
-		}
-		
-		private function get numLanes():uint {
-			return _numLanes;
+		public function get paused():Boolean {
+			return _paused;
 		}
 		
 		public function set backgroundColor(value:uint):void {
