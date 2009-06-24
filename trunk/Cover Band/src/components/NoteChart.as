@@ -2,6 +2,7 @@ package components {
 	import flash.display.Shape;
 	import flash.events.*;
 	import flash.net.*;
+	import flash.utils.Dictionary;
 	import flash.utils.getTimer;
 	
 	import mx.core.UIComponent;
@@ -35,11 +36,23 @@ package components {
 		private var _chartFilename:String;
 		private var _paused:Boolean = true;
 		
-		private var instrument:uint;
+		// Mapping from characters to lane number.
+		private var keys:Dictionary = new Dictionary();
+		// Array of indices that correspond to the nearest note in the notes
+		// array for each lane.
+		private var nearestNoteIndices:Array = [0, 0, 0, 0, 0];
 		private var notes:Array;
-		private var numLanes:uint = 0;
+		private var instrument:uint;
+		private var numLanes:uint;
 		private var prevTime:int = 0;
-		private var curTick:Number = 0;
+		
+		// TODO: Make this private again.
+		[Bindable]
+		public var curTick:Number = 0;
+		// Keep track of the height of the notes to avoid always getting it.
+		private var noteHeight:Number;
+		// y-coordinate of where the 0 tick begins.
+		private var yHitCoord:Number;
 
 		/**
 		 * Not much to do here.  Most of the initialization happens in init
@@ -49,6 +62,13 @@ package components {
 		 */		
 		public function NoteChart() {
 			super();
+			// TODO: Make this better.
+			// Default keys for each lane.
+			keys['a'] = 0;
+			keys['s'] = 1;
+			keys['d'] = 2;
+			keys['f'] = 3;
+			keys['g'] = 4;
 			// The rest of the functionality is handled by init.
 		}
 		
@@ -61,6 +81,7 @@ package components {
 		 */		
 		public function init(instrument:uint):void {
 			this.instrument = instrument;
+			yHitCoord = height / 2.0;
 			
 			var loader:URLLoader = new URLLoader();
 			configureURLLoaderListeners(loader);
@@ -87,6 +108,13 @@ package components {
 		public function finishInit(chartData:Array):void {
 			// Parse the file and create the notes.
 			parseChartData(chartData);
+			
+			// Add a line where the 0-tick starts.
+			var hitLine:Shape = new Shape();
+			hitLine.graphics.moveTo(0, yHitCoord);
+			hitLine.graphics.lineStyle(LINE_WIDTH * 2, LINE_COLOR, 1, true);
+			hitLine.graphics.lineTo(width, yHitCoord);
+			addChild(hitLine);
 			
 			// Add the graphical lane lines.
 			var numLines:uint = numLanes + 1;
@@ -119,15 +147,23 @@ package components {
 		/**
 		 * Pause the game.
 		 * 
-		 */		
+		 */
 		public function pause():void {
 			_paused = true;
 		}
+				/**
+		 * Try to hit a note with the given key.
+		 * 
+		 * @param key A string representing the keyboard key the player hit.
+		 * 
+		 */
+		 // TODO: Finish me.
+		public function tryHit(key:String):void {
+			if (keys[key] != undefined) {
+				var lane:uint = keys[key];
+			}
+		}
 		
-		
-		private var frames:uint = 0;
-		[Bindable]
-		public var fps:Number = 0;
 		/**
 		 * Main game updating logic.  Called each frame.
 		 * 
@@ -136,21 +172,48 @@ package components {
 			var curTime:int = getTimer();
 			var diffTime:int = curTime - prevTime;
 			var ticks:Number = diffTime / MILLISECONDS_PER_TICK;
-			curTick += ticks;
+			var dy:Number = ticks * noteHeight;
+			
 			prevTime = curTime;
 			
 			if (!_paused) {
-				for each (var lane:Array in notes) {
-					for each (var note:Note in lane) {
-						// FIXME: Pull this mult out of the loop.
-						note.y += ticks * note.myHeight;
-						note.draw();
+				curTick += ticks;
+					
+				for (var laneNum:uint = 0; laneNum < notes.length; laneNum++) {
+					var lane:Array = notes[laneNum];
+					var nearestNoteIndex:uint = nearestNoteIndices[laneNum];
+					var nearestNote:Note = lane[nearestNoteIndex];
+					
+					// Nothing to do -- no notes here.
+					if (!nearestNote) continue;
+					
+					// Default: if the nearest note has been disabled, don't
+					// let it be a contender for nearest note.
+					var nearestNoteTicks:Number = Number.MAX_VALUE;
+					
+					// If the nearest note is still enabled then it might still
+					// be the nearest this update.
+					if (nearestNote.enabled)
+						nearestNoteTicks = Math.abs(curTick - nearestNote.tick);
+					
+					for (var noteNum:uint = 0; noteNum < lane.length; noteNum++) {
+						var note:Note = lane[noteNum];
+						
+						if (note.enabled) {
+							var noteTicks:Number = Math.abs(curTick - note.tick);
+							if (noteTicks < nearestNoteTicks) {
+								nearestNoteTicks = noteTicks;
+								nearestNoteIndex = noteNum;
+							}
+							note.centerY += dy;
+							note.draw();
+						}
 					}
+					
+					nearestNoteIndices[laneNum] = nearestNoteIndex;
+					(lane[nearestNoteIndex] as Note).highlight();
 				}
 			}
-			
-			frames++;
-			if (frames % 10 == 0) fps = 1.0 / (diffTime / 1000.0);
 		}
 		
 		/**
@@ -211,11 +274,9 @@ package components {
 						
 					continue;
 				}
-				
-				trace(line);
-				
+								
 				if (line.match(commentRE) || line.match(blankLineRE)) {
-					trace("Comment or blank line detected");
+					trace("Comment or blank line detected:\n" + line);
 					continue;
 				}
 				
@@ -223,7 +284,6 @@ package components {
 				var searchIndex:int = line.search(multiplierRE);
 				if (searchIndex != -1) {
 					var substring:String = line.substr(searchIndex);
-					trace("Found multiplier: " + substring);
 					multiplier = parseInt(substring.substr(1));
 				}
 				
@@ -253,11 +313,14 @@ package components {
 		private function addNote(tick:uint, lane:uint):void {
 			var noteWidth:Number = _laneWidth;
 			var noteHeight:Number = noteWidth * HEIGHT_RATIO;
+			this.noteHeight = noteHeight;	// Save this for later.
 			
 			// +2 so everything lines up properly.
 			var x:Number = lane * (LINE_WIDTH + _laneWidth) + 2;
-			var y:Number = -(tick * noteHeight);
-			var note:Note = new Note(tick, lane, LANE_COLORS[instrument][lane], x, y, noteWidth, noteHeight);
+			var centerY:Number = -(tick * noteHeight) + yHitCoord;
+			var note:Note = new Note(tick, lane, LANE_COLORS[instrument][lane],
+				noteWidth, noteHeight, x, 0);
+			note.centerY = centerY;
 			(notes[lane] as Array).push(note);
 			addChild(note);
 		}
