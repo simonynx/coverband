@@ -72,7 +72,8 @@
 	
 	<mx:ApplicationControlBar id="appControlBar" dock="false">
 		<mx:Button id="playButton" label="Play!" width="80" />
-		<mx:TextArea editable="false" text="{noteChart.fps}" color="#00000" fontWeight="bold"/>
+		<mx:Label text="Current tick:" />
+		<mx:TextArea editable="false" text="{noteChart.curTick}" color="#00000" fontWeight="bold" width="100%" height="50%"/>
 	</mx:ApplicationControlBar>
 		
 	<mx:HBox id="playArea">
@@ -95,16 +96,18 @@
 			}
 			
 			private function noteChartKeyDownHandler(event:KeyboardEvent):void {
-				trace("Triggered key down handler: " + String.fromCharCode(event.charCode).toLowerCase());
-				switch(String.fromCharCode(event.charCode).toLowerCase()) {
+				var key:String = String.fromCharCode(event.charCode).toLowerCase();
+				switch(key) {
 					case "p":
 						playButton.dispatchEvent(new MouseEvent(MouseEvent.CLICK, true, false));
+						break;
+					default:
+						noteChart.tryHit(key);
 						break;
 				}
 			}
 			
 			private function playButtonClickHandler(event:MouseEvent):void {
-				trace('Clicked playButton!');
 				if (noteChart.paused) {
 					noteChart.play();
 					playButton.label="Pause";
