@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
-	xmlns:comps="components.*"
+	xmlns:comps="com.*"
 	layout="vertical"
 	width="100%" height="100%"
 	creationComplete="init()"
@@ -16,7 +16,6 @@
 			alternatingItemColors: #006976, #006976; }
 		FormItem { font-weight: bold; }
 		TextInput { color: #000000; }
-		HorizontalList { color: #000000; }
 	</mx:Style>
 	 
 	<mx:states>
@@ -42,23 +41,6 @@
 									<mx:ComboBox id="selectSong" selectedIndex="0" dataProvider="{['test']}" />
 								</mx:FormItem>
 								
-								<!-- TODO: Make this not such a mess. -->
-								<mx:FormItem label="Keys:">
-									<mx:HorizontalList id="colorHList"
-										columnCount="5" columnWidth="40"
-										height="{colorHList.columnWidth}"
-										dataProvider="{['', '', '', '', '']}"
-										alternatingItemColors="{NoteChart.LANE_COLORS[selectInstrument.selectedIndex]}"
-										focusAlpha="0" useRollOver="false"
-										/>
-									<mx:HorizontalList id="keysHList"
-										columnCount="{colorHList.columnCount}"
-										columnWidth="{colorHList.columnWidth}"
-										height="{colorHList.height}"
-										dataProvider="{['a', 's', 'd', 'f', 'g']}"
-										/>
-								</mx:FormItem>
-								
 								<mx:FormItem>
 									<mx:Button label="Go!" id="goButton"
 										click="currentState=''; noteChart.init(selectInstrument.selectedIndex);"/>
@@ -75,7 +57,7 @@
 		<mx:Label text="Current tick:" />
 		<mx:TextArea editable="false" text="{noteChart.curTick}" color="#00000" fontWeight="bold" width="100%" height="50%"/>
 	</mx:ApplicationControlBar>
-		
+	
 	<mx:HBox id="playArea">
 		<comps:NoteChart id="noteChart"
 			width="262" height="500"
@@ -85,7 +67,7 @@
 	</mx:HBox>
 	<mx:Script>
 		<![CDATA[
-			import components.Note;
+			import com.Note;
 			import mx.events.FlexEvent;
 
 			private function init():void {
