@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
 	xmlns:comps="com.*"
+	xmlns:tubeloc="com.enefekt.tubeloc.*"
 	layout="vertical"
 	width="100%" height="100%"
 	creationComplete="init()"
@@ -16,6 +17,7 @@
 			alternatingItemColors: #006976, #006976; }
 		FormItem { font-weight: bold; }
 		TextInput { color: #000000; }
+		Box { padding-top: 4px; padding-left: 4px; padding-right: 4px; }
 	</mx:Style>
 	 
 	<mx:states>
@@ -59,22 +61,27 @@
 	</mx:ApplicationControlBar>
 	
 	<mx:HBox id="playArea">
+		<tubeloc:Movie id="tubelocMovie" width="320" height="240" chromeless="true" />
+		
 		<comps:NoteChart id="noteChart"
 			width="262" height="500"
 			backgroundColor="#00045f"
 			chartFilename="{selectSong.selectedItem}"
 			/>
 	</mx:HBox>
+	
 	<mx:Script>
 		<![CDATA[
 			import com.Note;
 			import mx.events.FlexEvent;
+			import com.enefekt.tubeloc.event.*;
 
 			private function init():void {
 				focusManager.setFocus(noteChart);
 				application.addEventListener(KeyboardEvent.KEY_DOWN, noteChartKeyDownHandler);
 				playButton.addEventListener(MouseEvent.CLICK, playButtonClickHandler);
 				application.addEventListener(KeyboardEvent.KEY_UP, handleKeyUp);
+				tubelocMovie.addEventListener(PlayerReadyEvent.PLAYER_READY, onPlayerReady);
 			}
 			
 			private function noteChartKeyDownHandler(event:KeyboardEvent):void {
@@ -92,9 +99,11 @@
 			private function playButtonClickHandler(event:MouseEvent):void {
 				if (noteChart.paused) {
 					noteChart.play();
+					tubelocMovie.playVideo();
 					playButton.label="Pause";
 				} else {
 					noteChart.pause();
+					tubelocMovie.pauseVideo();
 					playButton.label="Play!";
 				}
 			}
@@ -110,6 +119,11 @@
 					case 102:
 						break;
 				}
+			}
+			
+			private function onPlayerReady(event_p:PlayerReadyEvent):void {
+				tubelocMovie.loadVideoById("Yavx9yxTrsw");
+				tubelocMovie.pauseVideo();
 			}
 		]]>
 	</mx:Script>
