@@ -19,6 +19,8 @@ package com {
 		private var _topLeftX:Number;
 		private var _topLeftY:Number;
 		
+		private var _score:uint = 25;
+		
 		public function Note(tick:uint, lane:uint, color:uint, width:Number,
 			height:Number, x:Number = 0, y:Number = 0) {
 			super();
@@ -41,6 +43,11 @@ package com {
 				//graphics.drawRect(0, 0, myWidth, myHeight);
 				graphics.endFill();
 			}
+		}
+		
+		public function hit():void {
+			enabled = false;
+			color = 0x000000;
 		}
 		
 		public function highlight():void {
@@ -97,6 +104,10 @@ package com {
 		
 		public function get enabled():Boolean {
 			return _enabled;
+		}
+		
+		public function get score():uint {
+			return _score;
 		}
 	}
 }

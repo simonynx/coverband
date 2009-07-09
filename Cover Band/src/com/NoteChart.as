@@ -8,6 +8,7 @@ package com {
 	import mx.core.UIComponent;
 	import mx.managers.IFocusManagerComponent;
 	
+	[Bindable]
 	public class NoteChart extends UIComponent implements IFocusManagerComponent {
 		public static const RED:uint = 0xff0000;
 		public static const YELLOW:uint = 0xffff00;
@@ -18,6 +19,7 @@ package com {
 		public static const DRUMS:uint = 0;
 		public static const GUITAR:uint = 1;
 		public static const BASS:uint = 2;
+		// TODO: Make this better.
 		public static const LANE_COLORS:Array = [
 			[RED, YELLOW, BLUE, GREEN, ORANGE],
 			[GREEN, RED, YELLOW, BLUE, ORANGE],
@@ -27,9 +29,15 @@ package com {
 		private const LINE_COLOR:uint = 0xffffff;
 		private const HEIGHT_RATIO:Number = 0.5;
 		
-		private const MILLISECONDS_PER_TICK:Number = 1000.0/10.0;
+/* 		private const MILLISECONDS_PER_TICK:Number = 1000.0/10.0;
 		private const SECONDS_PER_TICK:Number = MILLISECONDS_PER_TICK / 1000.0;
 		private const TICKS_PER_SECOND:Number = 1.0 / SECONDS_PER_TICK;
+ */		
+		private const TICKS_PER_SECOND:Number = 16.0;
+		private const SECONDS_PER_TICK:Number = 1.0 / TICKS_PER_SECOND;
+		private const MILLISECONDS_PER_TICK:Number = SECONDS_PER_TICK * 1000.0;
+		
+		private const NOTE_HIT_WINDOW_TICKS:Number = TICKS_PER_SECOND / 2.0;
 		
 		private var _backgroundColor:uint = 0x000000;
 		private var _laneWidth:Number;
@@ -47,12 +55,14 @@ package com {
 		private var prevTime:int = 0;
 		
 		// TODO: Make this private again.
-		[Bindable]
 		public var curTick:Number = 0;
 		// Keep track of the height of the notes to avoid always getting it.
 		private var noteHeight:Number;
 		// y-coordinate of where the 0 tick begins.
-		private var yHitCoord:Number;
+		private var yZeroCoord:Number;
+		
+		// TODO: Make this private again?
+		public var score:Score = new Score();
 
 		/**
 		 * Not much to do here.  Most of the initialization happens in init
@@ -81,7 +91,7 @@ package com {
 		 */		
 		public function init(instrument:uint):void {
 			this.instrument = instrument;
-			yHitCoord = height / 2.0;
+			yZeroCoord = height / 2.0;
 			
 			var loader:URLLoader = new URLLoader();
 			configureURLLoaderListeners(loader);
@@ -111,9 +121,9 @@ package com {
 			
 			// Add a line where the 0-tick starts.
 			var hitLine:Shape = new Shape();
-			hitLine.graphics.moveTo(0, yHitCoord);
+			hitLine.graphics.moveTo(0, yZeroCoord);
 			hitLine.graphics.lineStyle(LINE_WIDTH * 2, LINE_COLOR, 1, true);
-			hitLine.graphics.lineTo(width, yHitCoord);
+			hitLine.graphics.lineTo(width, yZeroCoord);
 			addChild(hitLine);
 			
 			// Add the graphical lane lines.
@@ -151,17 +161,37 @@ package com {
 		public function pause():void {
 			_paused = true;
 		}
-				/**
+		
+		/**
 		 * Try to hit a note with the given key.
 		 * 
 		 * @param key A string representing the keyboard key the player hit.
 		 * 
 		 */
-		 // TODO: Finish me.
 		public function tryHit(key:String):void {
 			if (keys[key] != undefined) {
 				var lane:uint = keys[key];
+				var nearestNote:Note = getNearestNote(lane);
+				var nearestNoteDelta:uint = Math.abs(
+					nearestNote.tick - curTick);
+					
+				if (nearestNote.enabled &&
+					nearestNoteDelta < NOTE_HIT_WINDOW_TICKS) {
+					hitNote(nearestNote);
+				} else {
+					miss();
+				}
 			}
+		}
+		
+		// TODO: Finish me.
+		private function hitNote(note:Note):void {
+			note.hit();
+			score.addToScore(note);
+		}
+
+		private function miss():void {
+			score.resetStreak();
 		}
 		
 		/**
@@ -189,20 +219,20 @@ package com {
 					
 					// Default: if the nearest note has been disabled, don't
 					// let it be a contender for nearest note.
-					var nearestNoteTicks:Number = Number.MAX_VALUE;
+					var nearestNoteDelta:Number = Number.MAX_VALUE;
 					
 					// If the nearest note is still enabled then it might still
 					// be the nearest this update.
 					if (nearestNote.enabled)
-						nearestNoteTicks = Math.abs(curTick - nearestNote.tick);
+						nearestNoteDelta = Math.abs(curTick - nearestNote.tick);
 					
 					for (var noteNum:uint = 0; noteNum < lane.length; noteNum++) {
 						var note:Note = lane[noteNum];
 						
 						if (note.enabled) {
 							var noteTicks:Number = Math.abs(curTick - note.tick);
-							if (noteTicks < nearestNoteTicks) {
-								nearestNoteTicks = noteTicks;
+							if (noteTicks < nearestNoteDelta) {
+								nearestNoteDelta = noteTicks;
 								nearestNoteIndex = noteNum;
 							}
 							note.centerY += dy;
@@ -233,13 +263,6 @@ package com {
 				chartData[i] = (chartData[i] as String).replace("\r", "");
 			
 			finishInit(chartData);
-		}
-		
-		/**
-		 * Placeholder for now.
-		 * 
-		 */		
-		override protected function createChildren():void {
 		}
 
 		/**
@@ -317,7 +340,7 @@ package com {
 			
 			// +2 so everything lines up properly.
 			var x:Number = lane * (LINE_WIDTH + _laneWidth) + 2;
-			var centerY:Number = -(tick * noteHeight) + yHitCoord;
+			var centerY:Number = -(tick * noteHeight) + yZeroCoord;
 			var note:Note = new Note(tick, lane, LANE_COLORS[instrument][lane],
 				noteWidth, noteHeight, x, 0);
 			note.centerY = centerY;
@@ -335,7 +358,11 @@ package com {
 			dispatcher.addEventListener(HTTPStatusEvent.HTTP_STATUS, httpStatusHandler);
             */
 		}
-        
+		
+        private function getNearestNote(lane:uint):Note {
+			return notes[lane][nearestNoteIndices[lane]];
+		}
+		
 		private function ioErrorHandler(event:IOErrorEvent):void {
 			trace("ioErrorHandler: " + event.text);
 		}
@@ -357,6 +384,13 @@ package com {
 			graphics.clear();
 			graphics.beginFill(_backgroundColor, alpha);
 			graphics.drawRect(0, 0, unscaledWidth, unscaledHeight);
+		}
+		
+		/**
+		 * Placeholder for now.
+		 * 
+		 */		
+		override protected function createChildren():void {
 		}
 	}
 }
