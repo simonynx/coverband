@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
-	xmlns:comps="com.*"
+	xmlns:com="com.*"
 	xmlns:tubeloc="com.enefekt.tubeloc.*"
 	layout="vertical"
 	width="100%" height="100%"
@@ -17,6 +17,7 @@
 			alternatingItemColors: #006976, #006976; }
 		FormItem { font-weight: bold; }
 		TextInput { color: #000000; }
+		Text { font-weight: bold; }
 		Box { padding-top: 4px; padding-left: 4px; padding-right: 4px; }
 	</mx:Style>
 	 
@@ -57,14 +58,22 @@
 	<mx:ApplicationControlBar id="appControlBar" dock="false">
 		<mx:Button id="playButton" label="Play!" width="80" />
 		<mx:Label text="Current tick:" />
-		<mx:TextArea editable="false" text="{noteChart.curTick}" color="#00000" fontWeight="bold" width="100%" height="50%"/>
+		<mx:Text text="{noteChart.curTick.toFixed(3)}" width="50" />
+		<mx:Label text="Score:" />
+		<mx:Text text="{noteChart.score.score}" width="50" />
+		<mx:Label text="Streak:" />
+		<mx:Text text="{noteChart.score.streak}" width="50" />
+		<mx:Label text="Total hit:" />
+		<mx:Text text="{noteChart.score.totalNotesHit}" width="50" />
+		<mx:Label text="Multiplier:" />
+		<mx:Text text="{noteChart.score.multiplier}" width="50" />
 	</mx:ApplicationControlBar>
 	
 	<mx:HBox id="playArea">
 		<tubeloc:Movie id="tubelocMovie" width="320" height="240" chromeless="true" />
 		
-		<comps:NoteChart id="noteChart"
-			width="262" height="500"
+		<com:NoteChart id="noteChart"
+			width="262" height="700"
 			backgroundColor="#00045f"
 			chartFilename="{selectSong.selectedItem}"
 			/>
