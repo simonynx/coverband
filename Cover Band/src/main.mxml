@@ -7,7 +7,8 @@
 	creationComplete="init()"
 	pageTitle="Cover Band"
 	currentState="Selection state"
-	backgroundGradientAlphas="[1.0, 1.0]" backgroundGradientColors="[#00AFC4, #00663C]"
+	backgroundGradientAlphas="[1.0, 1.0]"
+	backgroundGradientColors="[#00AFC4, #00663C]"
 	>
 	
 	<mx:Style>
@@ -33,20 +34,27 @@
 							
 								<mx:FormItem label="Instrument:">
 									<mx:ComboBox id="selectInstrument"
-										dataProvider="{['Drums', 'Guitar', 'Bass']}"/>
+										dataProvider="{['Drums',
+										'Guitar', 'Bass']}"/>
 								</mx:FormItem>
 								
 								<mx:FormItem label="Difficulty:">
-									<mx:ComboBox selectedIndex="1" dataProvider="{['Easy', 'Medium', 'Hard', 'Expert']}"/>
+									<mx:ComboBox selectedIndex="1"
+										dataProvider="{['Easy', 'Medium',
+										'Hard', 'Expert']}"/>
 								</mx:FormItem>
 								
 								<mx:FormItem label="Song:">
-									<mx:ComboBox id="selectSong" selectedIndex="0" dataProvider="{['test']}" />
+									<mx:ComboBox id="selectSong"
+										selectedIndex="0"
+										dataProvider="{['test']}" />
 								</mx:FormItem>
 								
 								<mx:FormItem>
 									<mx:Button label="Go!" id="goButton"
-										click="currentState=''; noteChart.init(selectInstrument.selectedIndex);"/>
+										click="currentState='';
+										noteChart.init(
+											selectInstrument.selectedIndex);"/>
 								</mx:FormItem>
 								
 						</mx:Form>
@@ -69,9 +77,11 @@
 		<mx:Text text="{noteChart.score.multiplier}" width="50" />
 	</mx:ApplicationControlBar>
 	
+	
 	<mx:HBox id="playArea">
-		<tubeloc:Movie id="tubelocMovie" width="320" height="240" chromeless="true" />
-		
+		<tubeloc:Movie id="tubelocMovie" width="320" height="240"
+			chromeless="true" />
+			
 		<com:NoteChart id="noteChart"
 			width="262" height="700"
 			backgroundColor="#00045f"
@@ -87,17 +97,22 @@
 
 			private function init():void {
 				focusManager.setFocus(noteChart);
-				application.addEventListener(KeyboardEvent.KEY_DOWN, noteChartKeyDownHandler);
-				playButton.addEventListener(MouseEvent.CLICK, playButtonClickHandler);
-				application.addEventListener(KeyboardEvent.KEY_UP, handleKeyUp);
-				tubelocMovie.addEventListener(PlayerReadyEvent.PLAYER_READY, onPlayerReady);
+				application.addEventListener(KeyboardEvent.KEY_DOWN,
+					noteChartKeyDownHandler);
+				playButton.addEventListener(MouseEvent.CLICK,
+					playButtonClickHandler);
+				application.addEventListener(KeyboardEvent.KEY_UP,
+					handleKeyUp);
+ 				tubelocMovie.addEventListener(PlayerReadyEvent.PLAYER_READY,
+					onPlayerReady); 
 			}
 			
 			private function noteChartKeyDownHandler(event:KeyboardEvent):void {
 				var key:String = String.fromCharCode(event.charCode).toLowerCase();
 				switch(key) {
 					case "p":
-						playButton.dispatchEvent(new MouseEvent(MouseEvent.CLICK, true, false));
+						playButton.dispatchEvent(new MouseEvent(
+							MouseEvent.CLICK, true, false));
 						break;
 					default:
 						noteChart.tryHit(key);
@@ -108,11 +123,11 @@
 			private function playButtonClickHandler(event:MouseEvent):void {
 				if (noteChart.paused) {
 					noteChart.play();
-					tubelocMovie.playVideo();
+ 					tubelocMovie.playVideo(); 
 					playButton.label="Pause";
 				} else {
 					noteChart.pause();
-					tubelocMovie.pauseVideo();
+ 					tubelocMovie.pauseVideo(); 
 					playButton.label="Play!";
 				}
 			}
@@ -131,8 +146,8 @@
 			}
 			
 			private function onPlayerReady(event_p:PlayerReadyEvent):void {
-				tubelocMovie.loadVideoById("Yavx9yxTrsw");
-				tubelocMovie.pauseVideo();
+ 				tubelocMovie.loadVideoById("Yavx9yxTrsw");
+				tubelocMovie.pauseVideo(); 
 			}
 		]]>
 	</mx:Script>

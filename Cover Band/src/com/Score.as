@@ -2,22 +2,24 @@ package com {
 	import mx.core.UIComponent;
 	
 	[Bindable]
-	public class Score {
+	public class Score extends Object {
 		// Number of notes required to get to the next streak multiplier.
 		private var NOTES_PER_STREAK_MULT:uint = 3;
 		private var MAX_MULTIPLIER:uint = 4;
 
+		[Bindable(event="scoreChanged")]
 		private var _score:uint = 0;
 		private var _totalNotesHit:uint = 0;
 		private var _streak:uint = 0;
 		private var _multiplier:uint = 1;
 		
 		public function Score() {
+			super();
 		}
 		
 		public function addToScore(note:Note):void {
-			_score += _multiplier * note.score;
-			_totalNotesHit++;
+			score += _multiplier * note.score;
+			totalNotesHit++;
 			streak++;
 		}
 		
@@ -25,7 +27,6 @@ package com {
 			streak = 0;
 		}
 		
-		//[Bindable]
 		public function get score():uint {
 			return _score;
 		}
@@ -34,7 +35,6 @@ package com {
 			_score = value;
 		}
 		
-		//[Bindable]
 		public function get totalNotesHit():uint {
 			return _totalNotesHit;
 		}
@@ -43,7 +43,6 @@ package com {
 			_totalNotesHit = value;
 		}
 		
-		//[Bindable]
 		public function get streak():uint {
 			return _streak;
 		}
@@ -53,7 +52,6 @@ package com {
 			multiplier = _streak / NOTES_PER_STREAK_MULT + 1;
 		}
 		
-		//[Bindable]
 		public function get multiplier():uint {
 			return _multiplier;
 		}
