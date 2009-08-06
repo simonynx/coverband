@@ -241,6 +241,7 @@ package com {
 					}
 					
 					nearestNoteIndices[laneNum] = nearestNoteIndex;
+					// TODO: Remove this.
 					(lane[nearestNoteIndex] as Note).highlight();
 				}
 			}
