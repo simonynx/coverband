@@ -36,12 +36,14 @@ package com {
 		public function draw():void {
 			graphics.clear();
 			
-			if (visible) {
+			if (enabled) {
 				//graphics.lineStyle(LINE_WIDTH, 0xffffff, 1);
 				graphics.beginFill(color);
 				graphics.drawRoundRect(0, 0, myWidth, myHeight, myWidth / 2, myWidth / 2);
 				//graphics.drawRect(0, 0, myWidth, myHeight);
 				graphics.endFill();
+			} else {
+				trace("Note not enabled")
 			}
 		}
 		

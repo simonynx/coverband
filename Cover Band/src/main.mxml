@@ -101,8 +101,6 @@
 					noteChartKeyDownHandler);
 				playButton.addEventListener(MouseEvent.CLICK,
 					playButtonClickHandler);
-				application.addEventListener(KeyboardEvent.KEY_UP,
-					handleKeyUp);
  				tubelocMovie.addEventListener(PlayerReadyEvent.PLAYER_READY,
 					onPlayerReady); 
 			}
@@ -129,19 +127,6 @@
 					noteChart.pause();
  					tubelocMovie.pauseVideo(); 
 					playButton.label="Play!";
-				}
-			}
-			
-			private function handleKeyUp(event:KeyboardEvent):void {
-				switch(event.charCode) {
-					case 97:
-						break;
-					case 115:
-						break;
-					case 100:
-						break;
-					case 102:
-						break;
 				}
 			}
 			
